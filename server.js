@@ -98,7 +98,7 @@ app.get('/api/users/:id/calculate', (req, res) => {
 });
 
 // Fallback: serve index.html for frontend routes
-app.get('*', (req, res) => {
+app.get(/^(?!\/api).*/, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
