@@ -1,13 +1,14 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Serve static files from public folder
 app.use(express.static('public'));
-
 
 // In-memory user storage
 let users = {
@@ -40,68 +41,44 @@ const riskWeights = {
 
 // Trust score calculation function
 function calculateTrustScore(user) {
-  let score = 100; // start with max trust
-
-  // 1. Geo risk (simplified: 1 if not India, else 0)
+  let score = 100;
   let geoRisk = user.location !== "India" ? 1 : 0;
-
-  // 2. Failed logins (normalized 0–1, max 5 attempts)
   let failedLoginsRisk = Math.min(user.failed_logins / 5, 1);
-
-  // 3. Unusual login time (hours outside 6-22 = risky)
   let hour = new Date(user.login_time).getUTCHours();
   let unusualTimeRisk = (hour < 6 || hour > 22) ? 1 : 0;
-
-  // 4. Device change (simplified: assume Chrome-Windows is usual)
   let deviceRisk = user.device !== "Chrome-Windows" ? 1 : 0;
-
-  // 5. Session activity (requests > 10 per min = risky)
   let sessionRisk = Math.min(user.session_activity / 10, 1);
 
-  // Weighted sum
   score -= geoRisk * riskWeights.geo_risk * 100;
   score -= failedLoginsRisk * riskWeights.failed_logins * 100;
   score -= unusualTimeRisk * riskWeights.unusual_time * 100;
   score -= deviceRisk * riskWeights.device_change * 100;
   score -= sessionRisk * riskWeights.session_activity * 100;
 
-  // Ensure score is between 0-100
   return Math.max(0, Math.min(100, Math.round(score)));
 }
 
-// Test route
-app.get('/', (req, res) => {
-  res.send('✅ TrustPulse Server Running Successfully');
+// Test route (optional)
+app.get('/api/test', (req, res) => {
+  res.send('✅ API is working');
 });
 
 // Get all users
-app.get('/api/users', (req, res) => {
-  res.json(users);
-});
+app.get('/api/users', (req, res) => res.json(users));
 
-// Get single user by ID
+// Get single user
 app.get('/api/users/:id', (req, res) => {
-  const userId = req.params.id;
-  const user = users[userId];
-
-  if (user) {
-    res.json(user);
-  } else {
-    res.status(404).json({ message: "User not found" });
-  }
+  const user = users[req.params.id];
+  if (user) res.json(user);
+  else res.status(404).json({ message: "User not found" });
 });
 
 // Update user activity
 app.post('/api/users/:id/update', (req, res) => {
-  const userId = req.params.id;
-  const user = users[userId];
-
-  if (!user) {
-    return res.status(404).json({ message: "User not found" });
-  }
+  const user = users[req.params.id];
+  if (!user) return res.status(404).json({ message: "User not found" });
 
   const { login_time, location, device, failed_logins, session_activity } = req.body;
-
   if (login_time) user.login_time = login_time;
   if (location) user.location = location;
   if (device) user.device = device;
@@ -111,30 +88,21 @@ app.post('/api/users/:id/update', (req, res) => {
   res.json({ message: "User activity updated successfully", user });
 });
 
-// Calculate trust score (POST version)
-app.post('/api/users/:id/calculate', (req, res) => {
-  const userId = req.params.id;
-  const user = users[userId];
-
-  if (!user) {
-    return res.status(404).json({ message: "User not found" });
-  }
-
-  user.trust_score = calculateTrustScore(user);
-
-  res.json({ message: "Trust score calculated", trust_score: user.trust_score });
-});
-
-// Calculate trust score (GET-friendly version for browser testing)
+// Calculate trust score (GET-friendly)
 app.get('/api/users/:id/calculate', (req, res) => {
-  const userId = req.params.id;
-  const user = users[userId];
-
+  const user = users[req.params.id];
   if (!user) return res.status(404).json({ message: "User not found" });
 
   user.trust_score = calculateTrustScore(user);
   res.json({ message: "Trust score calculated", trust_score: user.trust_score });
 });
 
+// Fallback: serve index.html for frontend routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+
