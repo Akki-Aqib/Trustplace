@@ -1,0 +1,56 @@
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f0f4f7;
+  padding: 20px;
+}
+
+h1 {
+  text-align: center;
+  color: #1a73e8;
+}
+
+#users-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+}
+
+.user-card {
+  background-color: white;
+  padding: 15px 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  width: 250px;
+}
+
+.user-card h3 {
+  margin-top: 0;
+}
+
+.trust-score {
+  font-weight: bold;
+  font-size: 1.2em;
+  color: green;
+}
+.user-card input {
+  width: 100%;
+  margin: 5px 0;
+  padding: 5px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+.user-card button {
+  margin: 5px 5px 5px 0;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  background-color: #1a73e8;
+  color: white;
+}
+
+.user-card button:hover {
+  background-color: #155ab6;
+}
